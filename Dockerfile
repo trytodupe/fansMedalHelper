@@ -1,14 +1,25 @@
+FROM python:3.9-alpine as requirements_stage
+ENV TZ="Asia/Shanghai"
+COPY ./docker/pip.conf /root/.config/pip/pip.conf
+
+WORKDIR /wheel
+
+COPY ./requirements.txt /wheel/
+
+RUN python -m pip wheel --wheel-dir=/wheel --no-cache-dir --requirement ./requirements.txt
+
+
 FROM python:3.9-alpine
 ENV TZ="Asia/Shanghai"
+COPY ./docker/pip.conf /root/.config/pip/pip.conf
 
-WORKDIR /tmp
+WORKDIR /app
 
-RUN apk add --no-cache git \
-    && git config --global --add safe.directory "*" \
-    && git clone https://github.com/XiaoMiku01/fansMedalHelper /app/fansMedalHelper \
-    && pip install --no-cache-dir -r /app/fansMedalHelper/requirements.txt \
-    && rm -rf /tmp/*
+COPY . /app/
+COPY --from=requirements_stage /wheel /wheel
 
-WORKDIR /app/fansMedalHelper
+RUN python -m pip install --no-cache-dir --find-links=/wheel -r /app/requirements.txt
 
-ENTRYPOINT ["/bin/sh","/app/fansMedalHelper/entrypoint.sh"]
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["/app/entrypoint.sh"]
