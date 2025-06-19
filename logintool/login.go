@@ -4,9 +4,11 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -16,14 +18,23 @@ import (
 )
 
 var AccessKey string
+var RefreshKey string
 
 var Csrf string
 
 var Cookies []*http.Cookie
 
+func NewNoProxyClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			Proxy: nil,
+		},
+	}
+}
+
 func Login() {
 	filename := "login_info.json"
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil || len(data) == 0 {
 		fmt.Println("未登录,请扫码登录")
 		loginBili()
@@ -51,7 +62,7 @@ func Login() {
 
 func is_login() (bool, string) {
 	api := "https://api.bilibili.com/x/web-interface/nav"
-	client := http.Client{}
+	client := NewNoProxyClient()
 	req, _ := http.NewRequest("GET", api, nil)
 	for _, c := range Cookies {
 		req.AddCookie(c)
@@ -73,7 +84,7 @@ func get_tv_qrcode_url_and_auth_code() (string, string) {
 	data["ts"] = fmt.Sprintf("%d", time.Now().Unix())
 	signature(&data)
 	data_string := strings.NewReader(map_to_string(data))
-	client := http.Client{}
+	client := NewNoProxyClient()
 	req, _ := http.NewRequest("POST", api, data_string)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := client.Do(req)
@@ -81,7 +92,7 @@ func get_tv_qrcode_url_and_auth_code() (string, string) {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	code := gjson.Parse(string(body)).Get("code").Int()
 	if code == 0 {
 		qrcode_url := gjson.Parse(string(body)).Get("data.url").String()
@@ -100,7 +111,7 @@ func verify_login(auth_code string) {
 	data["ts"] = fmt.Sprintf("%d", time.Now().Unix())
 	signature(&data)
 	data_string := strings.NewReader(map_to_string(data))
-	client := http.Client{}
+	client := NewNoProxyClient()
 	req, _ := http.NewRequest("POST", api, data_string)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	for {
@@ -109,14 +120,17 @@ func verify_login(auth_code string) {
 			panic(err)
 		}
 		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		code := gjson.Parse(string(body)).Get("code").Int()
 		AccessKey = gjson.Parse(string(body)).Get("data.access_token").String()
+		RefreshKey = gjson.Parse(string(body)).Get("data.refresh_token").String()
+
 		if code == 0 {
 			fmt.Println("登录成功")
 			fmt.Println("access_key:", string(AccessKey))
-			filename := "login_info.txt"
-			err := ioutil.WriteFile(filename, []byte(string(AccessKey)), 0644)
+			fmt.Println("refresh_key:", string(RefreshKey))
+			filename := "login_info.json"
+			err := os.WriteFile(filename, body, 0644)
 			if err != nil {
 				panic(err)
 			}
