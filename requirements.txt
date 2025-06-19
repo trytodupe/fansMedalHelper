@@ -3,3 +3,4 @@ aiohttp_socks
 loguru 
 pyyaml 
 apscheduler
+ruamel.yaml

@@ -473,3 +473,30 @@ class BiliApi:
             "ts": int(time.time()),
         }
         return await self.__post(url, data=SingableDict(data).signed, headers=self.headers)
+    
+    async def checkToken(self):
+        """查询登录令牌有效期
+        """
+        url = "https://passport.bilibili.com/api/v2/oauth2/info"
+        payload = {
+            "access_token": self.u.access_key,
+            "actionKey": "appkey",
+            "appkey": Crypto.APPKEY,
+            "ts": int(time.time()),
+        }
+        # {'mid': 12345, 'access_token': '6789asd', 'expires_in': 98765}
+        return await self.__get(url, params=SingableDict(payload).signed, headers=self.headers)
+
+    async def refreshToken(self):
+        """刷新登录令牌的有效期
+        """
+        url = "https://passport.bilibili.com/api/v2/oauth2/refresh_token"
+        payload = {
+            "access_token": self.u.access_key,
+            "actionKey": "appkey",
+            "appkey": Crypto.APPKEY,
+            "refresh_token": self.u.refresh_key,
+            "ts": int(time.time()),
+        }
+        return await self.__post(url, data=SingableDict(payload).signed, headers=self.headers)
+    

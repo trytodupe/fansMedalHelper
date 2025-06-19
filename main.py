@@ -111,9 +111,10 @@ async def main():
     startTasks = []
     catchMsg = []
     for user in users["USERS"]:
-        if user["access_key"]:
+        if user["access_key"] and user["refresh_key"]:
             biliUser = BiliUser(
                 user["access_key"],
+                user["refresh_key"],
                 user.get("white_uid", ""),
                 user.get("banned_uid", ""),
                 config,
