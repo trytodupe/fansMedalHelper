@@ -1,4 +1,4 @@
-FROM python:3.9-alpine as requirements_stage
+FROM python:3.9-alpine AS requirements_stage
 ENV TZ="Asia/Shanghai"
 COPY ./docker/pip.conf /root/.config/pip/pip.conf
 
