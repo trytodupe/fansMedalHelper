@@ -1,7 +1,7 @@
 services:
   fans-medal-helper:
     build: .
-    image: trytodupe/fans-medal-helper:v1.0.0
+    image: trytodupe/fans-medal-helper:v1.0.1
     volumes:
       - ./log:/app/log
       - ./users.yaml:/app/users.yaml:rw
