@@ -142,13 +142,16 @@ async def main():
 
         notifier = users["MOREPUSH"]["notifier"]
         params = users["MOREPUSH"]["params"]
-        await notify(
+        notify_resp = await notify(
             notifier,
             title=f"【B站粉丝牌助手推送】",
             content="  \n".join(messageList),
             **params,
             proxy=config.get("PROXY"),
         )
+        import inspect
+        if inspect.iscoroutine(notify_resp):
+            notify_resp = await notify_resp
         log.info(f"{notifier} 已推送")
 
 
